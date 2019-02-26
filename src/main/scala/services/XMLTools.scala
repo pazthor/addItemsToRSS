@@ -1,5 +1,4 @@
 package services
-import java.io.{File, PrintWriter}
 
 import scala.xml._
 import scala.xml.transform.{RewriteRule, RuleTransformer}
@@ -18,6 +17,8 @@ class XMLTools {
       val col = line.split(",").map(_.trim)
       val titulo_Episodio_Podcast: String = col(title)
       val urlEpisodioPodcast:String = col(urlPodcast)
+      val CData = Unparsed("<![CDATA[<h2>%s</h2><div></div>]]>".format(titulo_Episodio_Podcast))
+
       val addItemPodcast =
         <item>
           <title>{ titulo_Episodio_Podcast }</title>
@@ -26,8 +27,8 @@ class XMLTools {
           <category>Podcast</category>
           <pubDate>Thu, 10 Jan 2019 05:41:55 -0500</pubDate>
           <description>{ titulo_Episodio_Podcast }</description>
-          <content:encoded>{s"<![CDATA[<h2>$titulo_Episodio_Podcast </h2><div></div>]]>"}</content:encoded>
-          <enclosure url="" length="0" type="audio/mpeg" />
+          <content:encoded>{CData}</content:encoded>
+          <enclosure url={urlEpisodioPodcast} length="0" type="audio/mpeg" />
           <itunes:explicit>no</itunes:explicit>
           <itunes:author>{authorName}</itunes:author>
           <itunes:subtitle>{titulo_Episodio_Podcast}</itunes:subtitle>
