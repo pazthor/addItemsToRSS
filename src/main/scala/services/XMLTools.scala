@@ -1,57 +1,54 @@
 package services
-import scala.xml.{XML}
+import java.io.{File, PrintWriter}
+
+import scala.xml._
+import scala.xml.transform.{RewriteRule, RuleTransformer}
 
 class XMLTools {
 
-  def readXML(fileName: String): Unit ={
-    val xml = XML.loadString(xmlResponse)
-    val current = xml \\ "current"
-    val bufferedSource = scala.io.Source.fromFile(fileName)
+  def readXML(fileNameCsv: String, fileNameXML:String, authorName:String): Unit ={
+    var listaRules = List[RuleTransformer]()
+    var seqRules = Seq[Node]()
+
+    val xmlres = "xmlfile_out.xml"
+    val bufferedSource = scala.io.Source.fromFile(fileNameCsv)
     val title= 0
-    val urlPodcast = 3
-    for (line <- bufferedSource.getLines.drop(1)) {
+    val urlPodcast = 2
+    for (line <- bufferedSource.getLines.drop(0)) {
       val col = line.split(",").map(_.trim)
-
-      val tittlePodcast: String = col(title)
-      val urlName:String = col(urlPodcast)
-      val doc =
-        <calendar>
-          <week>
-            <day>Monday</day>
-            <day>Tuesday</day>
-            <day>Wednesday</day>
-            <day>Thursday</day>
-            <day>Friday</day>
-          </week>
-          <year>
-            <month>January</month>
-            <month>February</month>
-            <month>March</month>
-          </year>
-        </calendar>
-
-
-
+      val titulo_Episodio_Podcast: String = col(title)
+      val urlEpisodioPodcast:String = col(urlPodcast)
+      val addItemPodcast =
+        <item>
+          <title>{ titulo_Episodio_Podcast }</title>
+          <link>{urlEpisodioPodcast}</link>
+          <dc:creator>{authorName}</dc:creator>
+          <category>Podcast</category>
+          <pubDate>Thu, 10 Jan 2019 05:41:55 -0500</pubDate>
+          <description>{ titulo_Episodio_Podcast }</description>
+          <content:encoded>{s"<![CDATA[<h2>$titulo_Episodio_Podcast </h2><div></div>]]>"}</content:encoded>
+          <enclosure url="" length="0" type="audio/mpeg" />
+          <itunes:explicit>no</itunes:explicit>
+          <itunes:author>{authorName}</itunes:author>
+          <itunes:subtitle>{titulo_Episodio_Podcast}</itunes:subtitle>
+          <itunes:summary>{titulo_Episodio_Podcast}</itunes:summary>
+        </item>
+      seqRules = seqRules++addItemPodcast
     }
-  }
-  def addNode(to: Node, newNode: Node) = to match {
-    case Elem(prefix, label, attributes, scope, child@_*) => Elem(prefix, label, attributes, scope, child ++ newNode: _*)
-    case _ => println("could not find node"); to
+
+    val  seqNode = addSeqNodeRule(seqRules)
+    val  transformadaDeLaplace = new RuleTransformer(seqNode )
+    val tes = XML.loadFile(fileNameXML)
+    val resTransformada = transformadaDeLaplace(tes)
+    scala.xml.XML.save(xmlres, resTransformada)
+
   }
 
-  def parseApiResponse(xmlResponse: String): WeatherResult = {
-
-    val current = xml \\ "current"
-    if (current.isEmpty)
-      Error("error parsing xml response")
-    else {
-      val city = xml \\ "city" \ "@name"
-      val temp = xml \\ "temperature" \ "@value"
-      val min  = xml \\ "temperature" \ "@min"
-      val max  = xml \\ "temperature" \ "@max"
-      val weather = xml \\ "weather" \ "@value"
-      val lastUpdate = xml \\ "lastupdate" \ "@value"
-      WeatherReport(city.text, parseDouble(temp.text), parseDouble(min.text), parseDouble(max.text), weather.text, lastUpdate.text)
+  def addSeqNodeRule(addItems:Seq[Node]) = new RewriteRule {
+    override def transform(n: Node): Seq[Node] = n match {
+      case elem: Elem if elem.label == "channel" =>
+        elem.copy(child = (elem.child ++ addItems))
+      case n => n
     }
   }
 }
