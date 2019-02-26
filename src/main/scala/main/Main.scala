@@ -1,10 +1,11 @@
 package main
+
+import services.XMLTools
+
 object Main {
   def main(args: Array[String]) {
 
-    val service = new TicketService()
-    service.readCsv("dataset.csv")
-    service.getWeather()
-
+    val service = new XMLTools()
+    service.readXML("dataset.csv","TuXml.xml","Nombre del autor del podcast")
   }
 }
